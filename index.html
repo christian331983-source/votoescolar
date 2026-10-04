@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Voto Electrónico Escolar - Web Online</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js para estadísticas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              red: '#D91424',
+              gold: '#F59E0B',
+              navy: '#0F2A4A',
+              blue: '#0284C7',
+              dark: '#1E293B',
+              bg: '#F8FAFC'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      #acta-print-area, #acta-print-area * { visibility: visible; }
+      #acta-print-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- TOP HEADER INSTITUCIONAL -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="navegarA('inicio')">
+        <div id="header-logo-container" class="w-12 h-14 flex items-center justify-center overflow-hidden rounded bg-slate-50 border border-slate-200">
+          <img id="header-insignia" src="" alt="Insignia Colegio" class="max-h-full max-w-full object-contain">
+        </div>
+        <div>
+          <span class="text-xs font-bold text-red-600 tracking-wider uppercase block">Municipio Escolar</span>
+          <h1 id="header-school-name" class="font-bold text-base md:text-lg text-slate-900 leading-tight">I.E. N.° 6075 José María Arguedas</h1>
+          <p id="header-election-name" class="text-xs text-slate-500 hidden sm:block">Elecciones Escolares</p>
+        </div>
+      </div>
+
+      <nav class="flex items-center space-x-2">
+        <button onclick="navegarA('inicio')" class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-1.5">
+          <i data-lucide="home" class="w-4 h-4"></i> <span class="hidden sm:inline">Inicio</span>
+        </button>
+        <button onclick="navegarA('votacion')" class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-sm flex items-center gap-1.5">
+          <i data-lucide="vote" class="w-4 h-4"></i> <span>Cabina de Voto</span>
+        </button>
+        <button onclick="solicitarAccesoAdmin()" class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-600 hover:text-blue-700 hover:bg-blue-50 flex items-center gap-1.5 border border-slate-200">
+          <i data-lucide="shield-check" class="w-4 h-4"></i> <span class="hidden sm:inline">Administración</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL DE PANTALLAS -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+
+    <!-- ==================== 1. VISTA INICIO ==================== -->
+    <section id="vista-inicio" class="space-y-6">
+      <div class="bg-gradient-to-r from-red-700 via-red-800 to-slate-900 rounded-2xl p-6 md:p-10 text-white shadow-lg relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl space-y-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-sm">
+            <span id="badge-estado-eleccion" class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
+            <span id="badge-texto-eleccion">Proceso de Votación Abierto</span>
+          </div>
+          <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight">Sistema de Voto Electrónico en Línea</h2>
+          <p class="text-sm md:text-base text-red-100">
+            Plataforma centralizada en la nube con voto universal, secreto y cómputo transparente en tiempo real.
+          </p>
+          <div class="pt-2 flex flex-wrap gap-3">
+            <button onclick="navegarA('votacion')" class="px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold rounded-xl shadow transition flex items-center gap-2">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i> Ingresar a Votar
+            </button>
+            <button onclick="solicitarAccesoAdmin()" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl border border-white/20 transition flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5"></i> Resultados y Mesa
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Acceso Rápido -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-4">
+          <div class="p-3 bg-red-50 text-red-600 rounded-lg"><i data-lucide="shield" class="w-6 h-6"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900">Voto Secreto y Único</h3>
+            <p class="text-xs text-slate-500 mt-1">El sistema bloquea sufragios duplicados garantizando el anonimato absoluto de la decisión.</p>
+          </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-4">
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="users" class="w-6 h-6"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900">Listas y Candidatos</h3>
+            <p class="text-xs text-slate-500 mt-1">Cédula interactiva con fotografías oficiales, logos institucionales y propuestas.</p>
+          </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-4">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+          <div>
+            <h3 class="font-bold text-slate-900">Acta de Escrutinio</h3>
+            <p class="text-xs text-slate-500 mt-1">Generación e impresión automática del acta oficial de mesa lista para firmas de personeros.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. VISTA CABINA DE VOTACIÓN ==================== -->
+    <section id="vista-votacion" class="hidden space-y-6">
+
+      <!-- Paso 1: Identificación del Estudiante -->
+      <div id="voto-paso-identificacion" class="max-w-md mx-auto bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-md text-center space-y-5">
+        <div class="w-16 h-16 bg-red-100 text-red-600 mx-auto rounded-full flex items-center justify-center">
+          <i data-lucide="id-card" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Cabina de Votación Escolar</h2>
+          <p class="text-xs text-slate-500 mt-1">Ingresa tu número de DNI o código de estudiante asignado en el padrón.</p>
+        </div>
+
+        <form id="form-validar-elector" onsubmit="validarElector(event)" class="space-y-4">
+          <div>
+            <input type="text" id="input-dni-elector" required autocomplete="off" placeholder="Ej: 71234567"
+              class="w-full text-center text-xl font-mono tracking-widest px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-red-500 focus:outline-none uppercase">
+          </div>
+          <button type="submit" class="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2">
+            <span>Validar e Ingresar</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+        <p id="msg-error-elector" class="text-xs text-red-600 font-medium hidden"></p>
+      </div>
+
+      <!-- Paso 2: Cédula de Votación -->
+      <div id="voto-paso-cedula" class="hidden space-y-6">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-amber-500 text-white rounded-full"><i data-lucide="user-check" class="w-5 h-5"></i></div>
+            <div>
+              <p class="text-xs text-amber-800 font-semibold uppercase">Elector Habilitado</p>
+              <h3 id="cedula-nombre-elector" class="font-bold text-slate-900 text-base">Juan Pérez Ramos</h3>
+              <p id="cedula-datos-elector" class="text-xs text-slate-500 font-mono">DNI: 70000001 | Grado: 4to Sec.</p>
+            </div>
+          </div>
+          <div class="text-xs text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-amber-200">
+            ⚠️ Marca solo una opción en la cédula.
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-xl font-bold text-slate-900 text-center uppercase tracking-wide">Cédula Oficial de Sufragio</h2>
+          <p class="text-xs text-slate-500 text-center">Presiona el botón de tu candidato o lista de preferencia</p>
+        </div>
+
+        <!-- Grilla de Candidatos -->
+        <div id="grid-candidatos-cedula" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Dinámico -->
+        </div>
+
+        <div class="text-center pt-4">
+          <button onclick="cancelarVotoActual()" class="text-xs text-slate-400 hover:text-slate-600 underline">
+            Cancelar y salir de la cabina
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 3: Agradecimiento y Finalización -->
+      <div id="voto-paso-exito" class="hidden max-w-md mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-lg text-center space-y-5">
+        <div class="w-20 h-20 bg-green-100 text-green-600 mx-auto rounded-full flex items-center justify-center">
+          <i data-lucide="check" class="w-10 h-10"></i>
+        </div>
+        <div class="space-y-1">
+          <h2 class="text-2xl font-black text-slate-900">¡Voto Registrado con Éxito!</h2>
+          <p class="text-sm text-slate-500">Gracias por ejercer tu deber y derecho cívico escolar.</p>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-xl text-xs text-slate-600 border border-slate-200">
+          Tu participación ha sido computada en la base de datos central en la nube. Tu sufragio es anónimo y confidencial.
+        </div>
+        <button onclick="siguienteVotante()" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition flex items-center justify-center gap-2">
+          <i data-lucide="user-plus" class="w-5 h-5"></i> Siguiente Estudiante
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ==================== 3. VISTA PANEL DE ADMINISTRACIÓN ==================== -->
+    <section id="vista-admin" class="hidden space-y-6">
+
+      <!-- Pestañas de Admin -->
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-3">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="cambiarTabAdmin('escrutinio')" id="tab-btn-escrutinio" class="px-4 py-2 text-sm font-bold rounded-lg bg-red-600 text-white shadow-sm flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Escrutinio y Resultados
+          </button>
+          <button onclick="cambiarTabAdmin('candidatos')" id="tab-btn-candidatos" class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-200 flex items-center gap-2">
+            <i data-lucide="users-round" class="w-4 h-4"></i> Candidatos y Listas
+          </button>
+          <button onclick="cambiarTabAdmin('padron')" id="tab-btn-padron" class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-200 flex items-center gap-2">
+            <i data-lucide="contact-round" class="w-4 h-4"></i> Padrón de Estudiantes
+          </button>
+          <button onclick="cambiarTabAdmin('configuracion')" id="tab-btn-configuracion" class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-200 flex items-center gap-2">
+            <i data-lucide="settings" class="w-4 h-4"></i> Configuración e Insignia
+          </button>
+        </div>
+
+        <button onclick="cerrarSesionAdmin()" class="px-3 py-1.5 text-xs text-red-600 font-bold hover:bg-red-50 rounded-md border border-red-200 flex items-center gap-1">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Salir del Panel
+        </button>
+      </div>
+
+      <!-- TAB 1: ESCRUTINIO Y RESULTADOS -->
+      <div id="admin-tab-escrutinio" class="space-y-6">
+        <!-- Indicadores -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs text-slate-500 font-medium">Padrón Total</span>
+            <p id="kpi-total-padron" class="text-2xl font-black text-slate-900">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs text-green-600 font-medium">Votos Emitidos</span>
+            <p id="kpi-total-votos" class="text-2xl font-black text-green-700">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs text-amber-600 font-medium">Faltan Votar</span>
+            <p id="kpi-pendientes" class="text-2xl font-black text-amber-600">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs text-blue-600 font-medium">% Participación</span>
+            <p id="kpi-porcentaje" class="text-2xl font-black text-blue-700">0%</p>
+          </div>
+        </div>
+
+        <!-- Gráfico y Tabla -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-slate-900 text-sm">Distribución de Votos por Candidato / Lista</h3>
+              <button onclick="imprimirActa()" class="px-3 py-1.5 text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir Acta Oficial
+              </button>
+            </div>
+            <div class="h-64 sm:h-72">
+              <canvas id="chart-resultados"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-900 text-sm">Resumen por Lista</h3>
+            <div id="tabla-resumen-votos" class="space-y-3 custom-scroll max-h-72 overflow-y-auto pr-1">
+              <!-- Dinámico -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: CANDIDATOS Y LISTAS (CON SUBIDA DE FOTO) -->
+      <div id="admin-tab-candidatos" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Listas y Candidaturas</h3>
+            <p class="text-xs text-slate-500">Agrega o edita los candidatos, lemas y sube su foto oficial para la cédula.</p>
+          </div>
+          <button onclick="abrirModalCandidato()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuevo Candidato / Lista
+          </button>
+        </div>
+
+        <div id="contenedor-admin-candidatos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Tarjetas de candidatos generadas dinámicamente -->
+        </div>
+      </div>
+
+      <!-- TAB 3: PADRÓN ELECTORAL -->
+      <div id="admin-tab-padron" class="hidden space-y-6">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Padrón Electoral de Estudiantes</h3>
+              <p class="text-xs text-slate-500">Total registrados: <span id="span-total-padron" class="font-bold">0</span></p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold cursor-pointer border border-blue-200 flex items-center gap-1.5">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Importar CSV
+                <input type="file" id="file-csv-padron" accept=".csv, .txt" class="hidden" onchange="cargarPadronCSV(event)">
+              </label>
+              <button onclick="abrirModalNuevoElector()" class="px-3 py-2 bg-slate-900 text-white hover:bg-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Agregar Elector
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+              <input type="text" id="filtro-padron" oninput="filtrarPadron()" placeholder="Buscar por DNI, nombres o grado..."
+                class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-red-500">
+            </div>
+          </div>
+
+          <!-- Tabla de Estudiantes -->
+          <div class="overflow-x-auto border border-slate-200 rounded-lg">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">DNI / Código</th>
+                  <th class="p-3">Apellidos y Nombres</th>
+                  <th class="p-3">Grado y Sección</th>
+                  <th class="p-3 text-center">Estado de Voto</th>
+                  <th class="p-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-padron" class="divide-y divide-slate-200">
+                <!-- Dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: CONFIGURACIÓN E INSIGNIA DEL COLEGIO -->
+      <div id="admin-tab-configuracion" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- 1. GESTIÓN DE INSIGNIA Y LOGO ESCOLAR -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+            <div class="border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <i data-lucide="image" class="w-5 h-5 text-red-600"></i> Insignia Oficial del Colegio
+              </h3>
+              <p class="text-xs text-slate-500 mt-1">Sube la imagen institucional del colegio. Aparecerá en el encabezado, la cédula y las actas oficiales.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-6">
+              <!-- Vista previa actual -->
+              <div class="w-32 h-36 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center p-2 bg-slate-50 relative group">
+                <img id="preview-insignia-config" src="" alt="Insignia Actual" class="max-h-full max-w-full object-contain">
+              </div>
+
+              <!-- Controles de subida -->
+              <div class="flex-1 space-y-3 w-full">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">Cargar nueva imagen desde dispositivo:</label>
+                  <input type="file" id="input-archivo-insignia" accept="image/*" onchange="procesarArchivoInsignia(event)"
+                    class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer border border-slate-200 rounded-lg">
+                  <p class="text-[11px] text-slate-400 mt-1">Formatos admitidos: PNG, JPG o WEBP (recomendado fondo transparente).</p>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                  <button onclick="restablecerInsigniaArguedas()" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition">
+                    Restablecer Escudo Original
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. DATOS DE LA ELECCIÓN -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div class="border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                <i data-lucide="building" class="w-5 h-5 text-blue-600"></i> Datos de la Institución
+              </h3>
+              <p class="text-xs text-slate-500 mt-1">Configura el nombre de tu institución educativa y el título de la jornada electoral.</p>
+            </div>
+
+            <form onsubmit="guardarDatosInstitucion(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la I.E.:</label>
+                <input type="text" id="config-nombre-ie" required class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-red-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Proceso Electoral:</label>
+                <input type="text" id="config-nombre-proceso" required class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-red-500">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Lema o UGEL:</label>
+                <input type="text" id="config-lema" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-red-500">
+              </div>
+              <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                Guardar Modificaciones
+              </button>
+            </form>
+          </div>
+
+          <!-- 3. CONTROL DE ESTADO DE LA VOTACIÓN -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              <i data-lucide="toggle-left" class="w-5 h-5 text-amber-500"></i> Estado del Proceso
+            </h3>
+            <p class="text-xs text-slate-500">Permite habilitar o bloquear la emisión de votos en la cabina.</p>
+            <div class="flex items-center gap-4">
+              <button onclick="toggleEstadoEleccion()" id="btn-toggle-eleccion" class="px-5 py-2.5 rounded-xl font-bold text-xs text-white shadow-sm flex items-center gap-2">
+                <!-- Dinámico -->
+              </button>
+              <span id="label-estado-proceso" class="text-xs font-medium text-slate-700">Elección Abierta</span>
+            </div>
+          </div>
+
+          <!-- 4. REINICIO DE URNAS Y VOTOS -->
+          <div class="bg-white p-6 rounded-xl border border-red-200 shadow-sm space-y-4">
+            <h3 class="font-bold text-red-700 text-base flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i> Reinicio de Urnas / Votos a Cero
+            </h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Esta acción borra los votos emitidos y restablece a todos los estudiantes habilitados para volver a votar (ideal para reiniciar el sistema luego de pruebas previas). <b>No borra el padrón ni los candidatos</b>.
+            </p>
+            <button onclick="confirmarReinicioVotos()" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-2">
+              <i data-lucide="refresh-ccw" class="w-4 h-4"></i> Poner Urnas a Cero (0)
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL: CONFIRMACIÓN DE VOTO (CÉDULA) -->
+  <div id="modal-confirmar-voto" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+      <div id="modal-candidato-foto-container" class="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-red-500 bg-slate-100 flex items-center justify-center">
+        <img id="modal-voto-img" src="" alt="Candidato" class="w-full h-full object-cover">
+      </div>
+      <div>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">¿Confirmas tu elección?</span>
+        <h4 id="modal-voto-lista" class="text-lg font-bold text-slate-900 mt-1">Lista 1: Futuro Arguedino</h4>
+        <p id="modal-voto-candidato" class="text-xs text-slate-600">Candidato: Carlos Mendoza</p>
+      </div>
+      <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs text-amber-900 font-medium">
+        ⚠️ Una vez emitido el voto, no se podrá modificar ni anular.
+      </div>
+      <div class="flex gap-3">
+        <button onclick="cerrarModalConfirmarVoto()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
+          Corregir
+        </button>
+        <button onclick="ejecutarVotoConfirmado()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs shadow-md">
+          Sí, Confirmar Voto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR CANDIDATO CON SUBIDA DE FOTO -->
+  <div id="modal-candidato" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl custom-scroll max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 id="modal-candidato-titulo" class="font-bold text-slate-900">Agregar Candidato o Lista</h4>
+        <button onclick="cerrarModalCandidato()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="form-candidato" onsubmit="guardarCandidato(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="candidato-id">
+        
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nombre de la Lista / Partido:</label>
+          <input type="text" id="candidato-lista" required placeholder="Ej: Lista 1: Unidad Escolar" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Candidato(a) a Alcalde / Representante:</label>
+          <input type="text" id="candidato-nombre" required placeholder="Ej: María Fernández Torres" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Lema o Propuesta Clave:</label>
+          <input type="text" id="candidato-propuesta" placeholder="Ej: Talleres deportivos y recreos dinámicos" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300">
+        </div>
+
+        <!-- SECCIÓN DE FOTO DEL CANDIDATO -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+          <label class="block font-bold text-slate-800">Fotografía o Símbolo del Candidato(a):</label>
+          
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-20 rounded-lg overflow-hidden border border-slate-300 bg-white flex items-center justify-center">
+              <img id="preview-foto-candidato" src="" alt="Foto" class="w-full h-full object-cover hidden">
+              <span id="preview-placeholder-candidato" class="text-slate-300"><i data-lucide="user" class="w-8 h-8"></i></span>
+            </div>
+            
+            <div class="flex-1 space-y-2">
+              <label class="block">
+                <span class="text-[11px] font-semibold text-slate-600 block mb-1">Subir desde dispositivo:</span>
+                <input type="file" id="input-foto-candidato" accept="image/*" onchange="procesarFotoCandidato(event)"
+                  class="block w-full text-[11px] text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 cursor-pointer">
+              </label>
+              <div>
+                <span class="text-[10px] text-slate-400">O pegar enlace web de imagen:</span>
+                <input type="url" id="candidato-url-foto" oninput="actualizarPreviewUrlCandidato()" placeholder="https://..." class="w-full text-[11px] px-2 py-1 border rounded">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t">
+          <button type="button" onclick="cerrarModalCandidato()" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-sm">Guardar Candidato</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR ELECTOR MANUAL -->
+  <div id="modal-elector" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h4 class="font-bold text-slate-900">Agregar Elector al Padrón</h4>
+        <button onclick="cerrarModalElector()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="guardarElectorManual(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">DNI o Código Único:</label>
+          <input type="text" id="elector-dni" required class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 uppercase">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Apellidos y Nombres:</label>
+          <input type="text" id="elector-nombre" required class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Grado y Sección:</label>
+          <input type="text" id="elector-grado" required placeholder="Ej: 5to B Secundaria" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="cerrarModalElector()" class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-slate-900 text-white font-bold rounded-lg">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: LOGIN ADMINISTRADOR -->
+  <div id="modal-login-admin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 text-center shadow-2xl">
+      <div class="w-12 h-12 bg-blue-100 text-blue-600 mx-auto rounded-full flex items-center justify-center">
+        <i data-lucide="lock" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-900 text-base">Comité Electoral Escolar</h4>
+        <p class="text-xs text-slate-500 mt-1">Ingresa la clave de administración.</p>
+      </div>
+      <form onsubmit="verificarLoginAdmin(event)" class="space-y-3">
+        <input type="password" id="input-admin-pass" placeholder="Clave de acceso" required
+          class="w-full text-center px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm">
+        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow transition">
+          Ingresar al Panel
+        </button>
+      </form>
+      <p class="text-[11px] text-slate-400">Clave predeterminada: <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">admin1234</code></p>
+    </div>
+  </div>
+
+  <!-- FORMATO IMPRIMIBLE: ACTA OFICIAL DE ESCRUTINIO -->
+  <div id="acta-print-area" class="hidden p-8 bg-white text-black font-serif max-w-3xl mx-auto">
+    <div class="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
+      <div class="w-20 h-24 flex items-center justify-center">
+        <img id="acta-insignia" src="" alt="Insignia" class="max-h-full max-w-full object-contain">
+      </div>
+      <div class="text-center flex-1 px-4">
+        <h2 class="text-lg font-bold uppercase tracking-wider" id="acta-school-name">I.E. N.° 6075 JOSÉ MARÍA ARGUEDAS</h2>
+        <h3 class="text-base font-bold underline" id="acta-election-name">ELECCIONES MUNICIPIO ESCOLAR</h3>
+        <p class="text-xs uppercase font-sans mt-1">ACTA OFICIAL DE ESCRUTINIO Y PROCLAMACIÓN DE RESULTADOS</p>
+      </div>
+      <div class="w-20 text-right text-xs font-mono">
+        <p>MESA N.° 01</p>
+        <p id="acta-fecha">2026</p>
+      </div>
+    </div>
+
+    <div class="mb-4 text-xs font-sans space-y-1">
+      <p><b>Lugar:</b> Instalaciones de la Institución Educativa</p>
+      <p><b>Total de electores en Padrón:</b> <span id="acta-total-padron">0</span></p>
+      <p><b>Total de votos emitidos (Ciudadanos que votaron):</b> <span id="acta-total-votos">0</span></p>
+      <p><b>Ausentismo:</b> <span id="acta-ausentismo">0</span></p>
+    </div>
+
+    <table class="w-full text-left text-xs border-collapse border border-black mb-8 font-sans">
+      <thead>
+        <tr class="bg-slate-100 border border-black">
+          <th class="border border-black p-2">LISTA / CANDIDATURA</th>
+          <th class="border border-black p-2">CANDIDATO(A) ALCALDE</th>
+          <th class="border border-black p-2 text-center">VOTOS VÁLIDOS</th>
+          <th class="border border-black p-2 text-center">% TOTAL</th>
+        </tr>
+      </thead>
+      <tbody id="acta-tbody-resultados">
+        <!-- Generado al imprimir -->
+      </tbody>
+    </table>
+
+    <div class="grid grid-cols-3 gap-6 pt-12 text-center text-xs font-sans">
+      <div class="border-t border-black pt-2">
+        <p class="font-bold">Presidente(a) de Mesa</p>
+        <p class="text-[10px] text-slate-500">DNI: _________________</p>
+      </div>
+      <div class="border-t border-black pt-2">
+        <p class="font-bold">Secretario(a) de Mesa</p>
+        <p class="text-[10px] text-slate-500">DNI: _________________</p>
+      </div>
+      <div class="border-t border-black pt-2">
+        <p class="font-bold">Veedor / Asesor DAIP</p>
+        <p class="text-[10px] text-slate-500">Firma y Sello</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LÓGICO DEL SISTEMA -->
+  <script>
+    // INSIGNIA PREDETERMINADA EN SVG (I.E. 6075 José María Arguedas)
+    const INSIGNIA_DEFAULT_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="100%" height="100%">
+        <path d="M 40 40 Q 200 15 360 40 L 360 250 Q 360 400 200 480 Q 40 400 40 250 Z" fill="#0F2A4A" stroke="#F59E0B" stroke-width="12"/>
+        <path d="M 60 60 Q 200 35 340 60 L 340 240 Q 340 370 200 440 Q 60 370 60 240 Z" fill="#FFFFFF"/>
+        <path d="M 60 60 L 150 60 L 150 250 Q 150 340 60 260 Z" fill="#D91424"/>
+        <path d="M 250 60 L 340 60 L 340 260 Q 250 340 250 250 Z" fill="#D91424"/>
+        <circle cx="200" cy="220" r="75" fill="#FDE047" stroke="#0F2A4A" stroke-width="5"/>
+        <circle cx="200" cy="210" r="30" fill="#0F2A4A"/>
+        <path d="M 175 220 Q 200 235 225 220" stroke="#FFFFFF" stroke-width="4" fill="none"/>
+        <path d="M 155 260 Q 200 250 245 260 L 250 280 L 150 280 Z" fill="#0F2A4A"/>
+        <text x="200" y="115" font-family="Arial, sans-serif" font-weight="900" font-size="34" fill="#0F2A4A" text-anchor="middle">6075</text>
+        <text x="200" y="140" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="#D91424" text-anchor="middle">JOSÉ MARÍA ARGUEDAS</text>
+        <rect x="70" y="325" width="260" height="28" rx="6" fill="#F59E0B"/>
+        <text x="200" y="344" font-family="Arial, sans-serif" font-weight="bold" font-size="12" fill="#0F2A4A" text-anchor="middle">UGEL 07 - CHORRILLOS</text>
+        <path d="M 50 430 Q 200 470 350 430 L 340 455 Q 200 495 60 455 Z" fill="#D91424" stroke="#F59E0B" stroke-width="2"/>
+        <text x="200" y="450" font-family="Arial, sans-serif" font-weight="bold" font-size="11" fill="#FFFFFF" text-anchor="middle">AMOR • DISCIPLINA • TRABAJO</text>
+      </svg>
+    `)}`;
+
+    // CANDIDATO PLACEHOLDER SVG (Cuando no se sube imagen)
+    const CANDIDATE_DEFAULT_AVATAR = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+        <rect width="200" height="200" fill="#F1F5F9"/>
+        <circle cx="100" cy="75" r="40" fill="#94A3B8"/>
+        <path d="M 30 180 Q 100 130 170 180 Z" fill="#64748B"/>
+      </svg>
+    `)}`;
+
+    // ESTADO GLOBAL DE LA APLICACIÓN
+    let appData = {
+      config: {
+        colegio: "I.E. N.° 6075 José María Arguedas",
+        proceso: "Elecciones Municipio Escolar",
+        lema: "UGEL 07 Chorrillos",
+        insignia: INSIGNIA_DEFAULT_SVG,
+        eleccionAbierta: true,
+        claveAdmin: "admin1234"
+      },
+      candidatos: [
+        {
+          id: 1,
+          lista: "Lista 1: Vanguardia Arguedina",
+          candidato: "Valeria Navarro Huamán",
+          propuesta: "Recreos culturales, mejora de botiquines y torneos de ajedrez.",
+          foto: CANDIDATE_DEFAULT_AVATAR
+        },
+        {
+          id: 2,
+          lista: "Lista 2: Innovación y Acción",
+          candidato: "Sebastián Quispe Soto",
+          propuesta: "Implementación de áreas verdes, reciclaje y talleres de tecnología.",
+          foto: CANDIDATE_DEFAULT_AVATAR
+        }
+      ],
+      padron: [
+        { dni: "70000001", nombre: "ALVAREZ MENDOZA, Camila", grado: "1ro A Sec.", yaVoto: false },
+        { dni: "70000002", nombre: "BENITEZ CASTILLO, Diego", grado: "1ro B Sec.", yaVoto: false },
+        { dni: "70000003", nombre: "CORDOVA RIVERA, Lucía", grado: "2do A Sec.", yaVoto: false },
+        { dni: "70000004", nombre: "DELGADO PAREDES, Mateo", grado: "3ro A Sec.", yaVoto: false },
+        { dni: "70000005", nombre: "ESPINOZA FLORES, Gabriel", grado: "4to B Sec.", yaVoto: false },
+        { dni: "70000006", nombre: "FUENTES TAPIA, Romina", grado: "5to A Sec.", yaVoto: false }
+      ],
+      votos: [] // Almacena anónimamente { candidatoId: number | 'blanco', timestamp: string }
+    };
+
+    // VARIABLES DE SESIÓN LOCAL
+    let electorEnCabina = null;
+    let candidatoSeleccionadoParaVoto = null;
+    let chartInstance = null;
+    let fotoTemporalCandidato = null;
+
+    // INICIALIZACIÓN
+    window.addEventListener('DOMContentLoaded', () => {
+      cargarDatosDesdeStorage();
+      actualizarInterfazConfig();
+      renderizarCedula();
+      renderizarAdminCandidatos();
+      renderizarPadron();
+      lucide.createIcons();
+    });
+
+    // ==================== PERSISTENCIA WEB LOCALSTORAGE ====================
+    function guardarDatosEnStorage() {
+      try {
+        localStorage.setItem('SISTEMA_VOTO_ESCOLAR_DATA', JSON.stringify(appData));
+      } catch (e) {
+        console.error("Error guardando datos en almacenamiento web:", e);
+      }
+    }
+
+    function cargarDatosDesdeStorage() {
+      const dataStr = localStorage.getItem('SISTEMA_VOTO_ESCOLAR_DATA');
+      if (dataStr) {
+        try {
+          const parsed = JSON.parse(dataStr);
+          appData = { ...appData, ...parsed };
+          if (!appData.config.insignia) appData.config.insignia = INSIGNIA_DEFAULT_SVG;
+        } catch (e) {
+          console.error("Error parseando datos guardados:", e);
+        }
+      }
+    }
+
+    // ==================== ACTUALIZACIÓN VISUAL DE IDENTIDAD ====================
+    function actualizarInterfazConfig() {
+      const { colegio, proceso, insignia, eleccionAbierta } = appData.config;
+
+      document.getElementById('header-school-name').textContent = colegio;
+      document.getElementById('header-election-name').textContent = proceso;
+      document.getElementById('header-insignia').src = insignia;
+      document.getElementById('preview-insignia-config').src = insignia;
+      document.getElementById('acta-insignia').src = insignia;
+
+      document.getElementById('config-nombre-ie').value = colegio;
+      document.getElementById('config-nombre-proceso').value = proceso;
+      document.getElementById('config-lema').value = appData.config.lema || '';
+
+      // Estado del proceso
+      const badgeEstado = document.getElementById('badge-estado-eleccion');
+      const badgeTexto = document.getElementById('badge-texto-eleccion');
+      const btnToggle = document.getElementById('btn-toggle-eleccion');
+      const lblEstado = document.getElementById('label-estado-proceso');
+
+      if (eleccionAbierta) {
+        badgeEstado.className = "w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse";
+        badgeTexto.textContent = "Proceso de Votación Abierto";
+        btnToggle.className = "px-5 py-2.5 rounded-xl font-bold text-xs bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center gap-2";
+        btnToggle.innerHTML = `<i data-lucide="lock" class="w-4 h-4"></i> Cerrar Votaciones`;
+        lblEstado.textContent = "🟢 La votación está actualmente ABIERTA.";
+      } else {
+        badgeEstado.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+        badgeTexto.textContent = "Proceso de Votación Cerrado";
+        btnToggle.className = "px-5 py-2.5 rounded-xl font-bold text-xs bg-green-600 hover:bg-green-700 text-white shadow-sm flex items-center gap-2";
+        btnToggle.innerHTML = `<i data-lucide="unlock" class="w-4 h-4"></i> Abrir Votaciones`;
+        lblEstado.textContent = "🔴 La votación está actualmente CERRADA.";
+      }
+      lucide.createIcons();
+    }
+
+    // ==================== NAVEGACIÓN ====================
+    function navegarA(vista) {
+      document.getElementById('vista-inicio').classList.add('hidden');
+      document.getElementById('vista-votacion').classList.add('hidden');
+      document.getElementById('vista-admin').classList.add('hidden');
+
+      if (vista === 'inicio') {
+        document.getElementById('vista-inicio').classList.remove('hidden');
+      } else if (vista === 'votacion') {
+        document.getElementById('vista-votacion').classList.remove('hidden');
+        if (!electorEnCabina) {
+          mostrarPasoVotacion('identificacion');
+        }
+      } else if (vista === 'admin') {
+        document.getElementById('vista-admin').classList.remove('hidden');
+        actualizarEscrutinio();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function mostrarPasoVotacion(paso) {
+      document.getElementById('voto-paso-identificacion').classList.add('hidden');
+      document.getElementById('voto-paso-cedula').classList.add('hidden');
+      document.getElementById('voto-paso-exito').classList.add('hidden');
+
+      if (paso === 'identificacion') {
+        document.getElementById('voto-paso-identificacion').classList.remove('hidden');
+        document.getElementById('input-dni-elector').value = '';
+        document.getElementById('msg-error-elector').classList.add('hidden');
+      } else if (paso === 'cedula') {
+        document.getElementById('voto-paso-cedula').classList.remove('hidden');
+      } else if (paso === 'exito') {
+        document.getElementById('voto-paso-exito').classList.remove('hidden');
+      }
+    }
+
+    // ==================== LÓGICA DE VOTACIÓN ====================
+    function validarElector(e) {
+      e.preventDefault();
+      const msgErr = document.getElementById('msg-error-elector');
+      msgErr.classList.add('hidden');
+
+      if (!appData.config.eleccionAbierta) {
+        msgErr.textContent = "El proceso de votación ha sido cerrado por el comité electoral.";
+        msgErr.classList.remove('hidden');
+        return;
+      }
+
+      const inputCodigo = document.getElementById('input-dni-elector').value.trim().toUpperCase();
+      const elector = appData.padron.find(p => p.dni.toUpperCase() === inputCodigo);
+
+      if (!elector) {
+        msgErr.textContent = "El DNI o código no se encuentra registrado en el padrón electoral.";
+        msgErr.classList.remove('hidden');
+        return;
+      }
+
+      if (elector.yaVoto) {
+        msgErr.textContent = "Este estudiante ya emitió su voto. No se permite doble sufragio.";
+        msgErr.classList.remove('hidden');
+        return;
+      }
+
+      // Elector Habilitado
+      electorEnCabina = elector;
+      document.getElementById('cedula-nombre-elector').textContent = elector.nombre;
+      document.getElementById('cedula-datos-elector').textContent = `DNI: ${elector.dni} | Grado: ${elector.grado}`;
+      renderizarCedula();
+      mostrarPasoVotacion('cedula');
+    }
+
+    function renderizarCedula() {
+      const container = document.getElementById('grid-candidatos-cedula');
+      container.innerHTML = '';
+
+      appData.candidatos.forEach(c => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl border-2 border-slate-200 hover:border-red-500 transition-all p-5 flex flex-col justify-between shadow-sm hover:shadow-md text-center";
+        card.innerHTML = `
+          <div>
+            <div class="w-28 h-32 mx-auto rounded-xl overflow-hidden bg-slate-50 border border-slate-200 mb-4 flex items-center justify-center">
+              <img src="${c.foto || CANDIDATE_DEFAULT_AVATAR}" alt="${c.candidato}" class="w-full h-full object-cover">
+            </div>
+            <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-700 mb-2">${c.lista}</span>
+            <h4 class="font-black text-slate-900 text-base leading-tight">${c.candidato}</h4>
+            <p class="text-xs text-slate-500 mt-2 italic">"${c.propuesta || 'Por el progreso de nuestra I.E.'}"</p>
+          </div>
+          <button onclick="prepararConfirmacionVoto(${c.id})" class="mt-5 w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i> Votar por esta Lista
+          </button>
+        `;
+        container.appendChild(card);
+      });
+
+      // Opción de Voto en Blanco
+      const cardBlanco = document.createElement('div');
+      cardBlanco.className = "bg-white rounded-2xl border-2 border-dashed border-slate-300 hover:border-slate-500 transition-all p-5 flex flex-col justify-between shadow-sm text-center";
+      cardBlanco.innerHTML = `
+        <div>
+          <div class="w-28 h-32 mx-auto rounded-xl bg-slate-100 border border-slate-200 mb-4 flex items-center justify-center text-slate-400">
+            <i data-lucide="square" class="w-12 h-12"></i>
+          </div>
+          <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 mb-2">Opción Electoral</span>
+          <h4 class="font-black text-slate-900 text-base">Voto en Blanco</h4>
+          <p class="text-xs text-slate-500 mt-2 italic">Sin preferencia por ninguna candidatura</p>
+        </div>
+        <button onclick="prepararConfirmacionVoto('blanco')" class="mt-5 w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-sm transition shadow flex items-center justify-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i> Votar en Blanco
+        </button>
+      `;
+      container.appendChild(cardBlanco);
+      lucide.createIcons();
+    }
+
+    function prepararConfirmacionVoto(opcionId) {
+      candidatoSeleccionadoParaVoto = opcionId;
+      const modal = document.getElementById('modal-confirmar-voto');
+      const imgElem = document.getElementById('modal-voto-img');
+      const listaElem = document.getElementById('modal-voto-lista');
+      const candElem = document.getElementById('modal-voto-candidato');
+
+      if (opcionId === 'blanco') {
+        imgElem.src = CANDIDATE_DEFAULT_AVATAR;
+        listaElem.textContent = "VOTO EN BLANCO";
+        candElem.textContent = "No seleccionó ninguna lista";
+      } else {
+        const cand = appData.candidatos.find(c => c.id === opcionId);
+        imgElem.src = cand.foto || CANDIDATE_DEFAULT_AVATAR;
+        listaElem.textContent = cand.lista;
+        candElem.textContent = "Candidato(a): " + cand.candidato;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function cerrarModalConfirmarVoto() {
+      document.getElementById('modal-confirmar-voto').classList.add('hidden');
+      candidatoSeleccionadoParaVoto = null;
+    }
+
+    function ejecutarVotoConfirmado() {
+      if (!electorEnCabina || candidatoSeleccionadoParaVoto === null) return;
+
+      // 1. Marcar elector en padrón para evitar doble voto
+      const index = appData.padron.findIndex(p => p.dni === electorEnCabina.dni);
+      if (index !== -1) {
+        appData.padron[index].yaVoto = true;
+      }
+
+      // 2. Registrar voto de manera estrictamente anónima
+      appData.votos.push({
+        candidatoId: candidatoSeleccionadoParaVoto,
+        fecha: new Date().toISOString()
+      });
+
+      // 3. Persistir en la nube / almacenamiento web
+      guardarDatosEnStorage();
+
+      cerrarModalConfirmarVoto();
+      electorEnCabina = null;
+      candidatoSeleccionadoParaVoto = null;
+      mostrarPasoVotacion('exito');
+    }
+
+    function siguienteVotante() {
+      electorEnCabina = null;
+      mostrarPasoVotacion('identificacion');
+      renderizarPadron();
+    }
+
+    function cancelarVotoActual() {
+      electorEnCabina = null;
+      mostrarPasoVotacion('identificacion');
+    }
+
+    // ==================== PANEL DE ADMINISTRACIÓN ====================
+    function solicitarAccesoAdmin() {
+      document.getElementById('input-admin-pass').value = '';
+      document.getElementById('modal-login-admin').classList.remove('hidden');
+    }
+
+    function verificarLoginAdmin(e) {
+      e.preventDefault();
+      const pass = document.getElementById('input-admin-pass').value;
+      if (pass === appData.config.claveAdmin) {
+        document.getElementById('modal-login-admin').classList.add('hidden');
+        navegarA('admin');
+      } else {
+        alert("Clave de administración incorrecta.");
+      }
+    }
+
+    function cerrarSesionAdmin() {
+      navegarA('inicio');
+    }
+
+    function cambiarTabAdmin(tab) {
+      ['escrutinio', 'candidatos', 'padron', 'configuracion'].forEach(t => {
+        document.getElementById(`admin-tab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-btn-${t}`);
+        btn.className = "px-4 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-200 flex items-center gap-2";
+      });
+
+      document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      activeBtn.className = "px-4 py-2 text-sm font-bold rounded-lg bg-red-600 text-white shadow-sm flex items-center gap-2";
+
+      if (tab === 'escrutinio') actualizarEscrutinio();
+      if (tab === 'candidatos') renderizarAdminCandidatos();
+      if (tab === 'padron') renderizarPadron();
+      lucide.createIcons();
+    }
+
+    // ==================== ESCRUTINIO Y RESULTADOS ====================
+    function actualizarEscrutinio() {
+      const totalPadron = appData.padron.length;
+      const totalVotos = appData.votos.length;
+      const pendientes = Math.max(0, totalPadron - totalVotos);
+      const porcentaje = totalPadron > 0 ? ((totalVotos / totalPadron) * 100).toFixed(1) : 0;
+
+      document.getElementById('kpi-total-padron').textContent = totalPadron;
+      document.getElementById('kpi-total-votos').textContent = totalVotos;
+      document.getElementById('kpi-pendientes').textContent = pendientes;
+      document.getElementById('kpi-porcentaje').textContent = porcentaje + '%';
+
+      // Conteo de votos por opción
+      const conteo = {};
+      appData.candidatos.forEach(c => conteo[c.id] = 0);
+      conteo['blanco'] = 0;
+
+      appData.votos.forEach(v => {
+        if (conteo[v.candidatoId] !== undefined) {
+          conteo[v.candidatoId]++;
+        }
+      });
+
+      // Actualizar Gráfico Chart.js
+      const labels = appData.candidatos.map(c => c.lista).concat(['Voto en Blanco']);
+      const dataValues = appData.candidatos.map(c => conteo[c.id]).concat([conteo['blanco']]);
+      const colors = ['#D91424', '#0F2A4A', '#F59E0B', '#10B981', '#8B5CF6', '#64748B'];
+
+      const ctx = document.getElementById('chart-resultados').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Votos',
+            data: dataValues,
+            backgroundColor: colors.slice(0, labels.length),
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+          }
+        }
+      });
+
+      // Tabla lateral de resumen
+      const contResumen = document.getElementById('tabla-resumen-votos');
+      contResumen.innerHTML = '';
+
+      appData.candidatos.forEach(c => {
+        const v = conteo[c.id] || 0;
+        const pct = totalVotos > 0 ? ((v / totalVotos) * 100).toFixed(1) : 0;
+        contResumen.innerHTML += `
+          <div class="flex items-center justify-between text-xs p-2 bg-slate-50 rounded-lg">
+            <div class="flex items-center gap-2">
+              <img src="${c.foto || CANDIDATE_DEFAULT_AVATAR}" class="w-8 h-8 rounded-full object-cover border">
+              <div>
+                <span class="font-bold text-slate-800 block">${c.lista}</span>
+                <span class="text-slate-400 text-[10px]">${c.candidato}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-black text-slate-900">${v} votos</span>
+              <span class="block text-[10px] text-slate-400">${pct}%</span>
+            </div>
+          </div>
+        `;
+      });
+
+      // Voto en blanco en resumen
+      const vb = conteo['blanco'] || 0;
+      const pctB = totalVotos > 0 ? ((vb / totalVotos) * 100).toFixed(1) : 0;
+      contResumen.innerHTML += `
+        <div class="flex items-center justify-between text-xs p-2 bg-slate-100 rounded-lg">
+          <span class="font-bold text-slate-600">Votos en Blanco</span>
+          <div class="text-right">
+            <span class="font-black text-slate-900">${vb} votos</span>
+            <span class="block text-[10px] text-slate-400">${pctB}%</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== GESTIÓN DE CANDIDATOS (CON FOTO) ====================
+    function renderizarAdminCandidatos() {
+      const container = document.getElementById('contenedor-admin-candidatos');
+      container.innerHTML = '';
+
+      appData.candidatos.forEach(c => {
+        const div = document.createElement('div');
+        div.className = "bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between";
+        div.innerHTML = `
+          <div>
+            <div class="flex items-center gap-4 mb-3">
+              <div class="w-16 h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                <img src="${c.foto || CANDIDATE_DEFAULT_AVATAR}" alt="${c.candidato}" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <span class="text-[11px] font-bold text-red-600 uppercase tracking-wide block">${c.lista}</span>
+                <h4 class="font-bold text-slate-900 text-sm">${c.candidato}</h4>
+              </div>
+            </div>
+            <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 italic">
+              "${c.propuesta || 'Sin propuesta registrada'}"
+            </p>
+          </div>
+          <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+            <button onclick="editarCandidato(${c.id})" class="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 font-bold rounded-lg flex items-center gap-1">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar Foto / Datos
+            </button>
+            <button onclick="eliminarCandidato(${c.id})" class="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 font-bold rounded-lg flex items-center gap-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Eliminar
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      lucide.createIcons();
+    }
+
+    function abrirModalCandidato() {
+      document.getElementById('candidato-id').value = '';
+      document.getElementById('candidato-lista').value = '';
+      document.getElementById('candidato-nombre').value = '';
+      document.getElementById('candidato-propuesta').value = '';
+      document.getElementById('candidato-url-foto').value = '';
+      document.getElementById('input-foto-candidato').value = '';
+      fotoTemporalCandidato = null;
+
+      document.getElementById('preview-foto-candidato').src = '';
+      document.getElementById('preview-foto-candidato').classList.add('hidden');
+      document.getElementById('preview-placeholder-candidato').classList.remove('hidden');
+
+      document.getElementById('modal-candidato-titulo').textContent = 'Agregar Candidato o Lista';
+      document.getElementById('modal-candidato').classList.remove('hidden');
+    }
+
+    function cerrarModalCandidato() {
+      document.getElementById('modal-candidato').classList.add('hidden');
+      fotoTemporalCandidato = null;
+    }
+
+    // LECTURA Y COMPRESIÓN DE FOTO DE CANDIDATO
+    function procesarFotoCandidato(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          // Comprimir a max 300x300 para optimizar almacenamiento en local/web
+          const canvas = document.createElement('canvas');
+          const maxDim = 300;
+          let w = img.width, h = img.height;
+          if (w > h && w > maxDim) { h *= maxDim / w; w = maxDim; }
+          else if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          fotoTemporalCandidato = canvas.toDataURL('image/jpeg', 0.85);
+
+          document.getElementById('preview-foto-candidato').src = fotoTemporalCandidato;
+          document.getElementById('preview-foto-candidato').classList.remove('hidden');
+          document.getElementById('preview-placeholder-candidato').classList.add('hidden');
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function actualizarPreviewUrlCandidato() {
+      const url = document.getElementById('candidato-url-foto').value.trim();
+      if (url) {
+        fotoTemporalCandidato = url;
+        document.getElementById('preview-foto-candidato').src = url;
+        document.getElementById('preview-foto-candidato').classList.remove('hidden');
+        document.getElementById('preview-placeholder-candidato').classList.add('hidden');
+      }
+    }
+
+    function guardarCandidato(e) {
+      e.preventDefault();
+      const id = document.getElementById('candidato-id').value;
+      const lista = document.getElementById('candidato-lista').value.trim();
+      const candidato = document.getElementById('candidato-nombre').value.trim();
+      const propuesta = document.getElementById('candidato-propuesta').value.trim();
+
+      const fotoFinal = fotoTemporalCandidato || CANDIDATE_DEFAULT_AVATAR;
+
+      if (id) {
+        // Editar
+        const index = appData.candidatos.findIndex(c => c.id == id);
+        if (index !== -1) {
+          appData.candidatos[index] = {
+            ...appData.candidatos[index],
+            lista,
+            candidato,
+            propuesta,
+            foto: fotoFinal
+          };
+        }
+      } else {
+        // Nuevo
+        appData.candidatos.push({
+          id: Date.now(),
+          lista,
+          candidato,
+          propuesta,
+          foto: fotoFinal
+        });
+      }
+
+      guardarDatosEnStorage();
+      cerrarModalCandidato();
+      renderizarAdminCandidatos();
+      renderizarCedula();
+      alert("Candidatura guardada exitosamente con su fotografía.");
+    }
+
+    function editarCandidato(id) {
+      const c = appData.candidatos.find(cand => cand.id === id);
+      if (!c) return;
+
+      document.getElementById('candidato-id').value = c.id;
+      document.getElementById('candidato-lista').value = c.lista;
+      document.getElementById('candidato-nombre').value = c.candidato;
+      document.getElementById('candidato-propuesta').value = c.propuesta;
+      document.getElementById('candidato-url-foto').value = '';
+      document.getElementById('input-foto-candidato').value = '';
+
+      fotoTemporalCandidato = c.foto;
+      document.getElementById('preview-foto-candidato').src = c.foto || CANDIDATE_DEFAULT_AVATAR;
+      document.getElementById('preview-foto-candidato').classList.remove('hidden');
+      document.getElementById('preview-placeholder-candidato').classList.add('hidden');
+
+      document.getElementById('modal-candidato-titulo').textContent = 'Editar Candidato y Fotografía';
+      document.getElementById('modal-candidato').classList.remove('hidden');
+    }
+
+    function eliminarCandidato(id) {
+      if (confirm("¿Estás seguro de eliminar este candidato? Los votos registrados para él se mantendrán o quedarán huérfanos.")) {
+        appData.candidatos = appData.candidatos.filter(c => c.id !== id);
+        guardarDatosEnStorage();
+        renderizarAdminCandidatos();
+        renderizarCedula();
+      }
+    }
+
+    // ==================== CONFIGURACIÓN E INSIGNIA DEL COLEGIO ====================
+    function procesarArchivoInsignia(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          // Redimensionar para optimizar
+          const canvas = document.createElement('canvas');
+          const maxDim = 400;
+          let w = img.width, h = img.height;
+          if (w > h && w > maxDim) { h *= maxDim / w; w = maxDim; }
+          else if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const base64Insignia = canvas.toDataURL('image/png');
+          appData.config.insignia = base64Insignia;
+          guardarDatosEnStorage();
+          actualizarInterfazConfig();
+          alert("¡Insignia del colegio actualizada y guardada correctamente!");
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function restablecerInsigniaArguedas() {
+      if (confirm("¿Deseas restablecer el escudo oficial de la I.E. 6075 José María Arguedas?")) {
+        appData.config.insignia = INSIGNIA_DEFAULT_SVG;
+        guardarDatosEnStorage();
+        actualizarInterfazConfig();
+      }
+    }
+
+    function guardarDatosInstitucion(e) {
+      e.preventDefault();
+      appData.config.colegio = document.getElementById('config-nombre-ie').value.trim();
+      appData.config.proceso = document.getElementById('config-nombre-proceso').value.trim();
+      appData.config.lema = document.getElementById('config-lema').value.trim();
+      guardarDatosEnStorage();
+      actualizarInterfazConfig();
+      alert("Datos institucionales actualizados.");
+    }
+
+    function toggleEstadoEleccion() {
+      appData.config.eleccionAbierta = !appData.config.eleccionAbierta;
+      guardarDatosEnStorage();
+      actualizarInterfazConfig();
+    }
+
+    function confirmarReinicioVotos() {
+      const confirma = confirm("⚠️️ ATENCIÓN: Esta acción borrará todos los votos emitidos y reactivará el padrón completo a 'Pendiente de Voto'.\n\n¿Estás seguro de poner las urnas a cero (0)?");
+      if (confirma) {
+        const clave = prompt("Por seguridad, ingresa la clave de administrador para confirmar:");
+        if (clave === appData.config.claveAdmin) {
+          appData.votos = [];
+          appData.padron.forEach(e => e.yaVoto = false);
+          guardarDatosEnStorage();
+          actualizarEscrutinio();
+          renderizarPadron();
+          alert("✅ Se han reiniciado las urnas a cero votos. Todos los electores pueden votar nuevamente.");
+        } else {
+          alert("Clave incorrecta. Operación cancelada.");
+        }
+      }
+    }
+
+    // ==================== GESTIÓN DE PADRÓN ====================
+    function renderizarPadron(filtro = "") {
+      const tbody = document.getElementById('tbody-padron');
+      tbody.innerHTML = '';
+
+      const filtrados = appData.padron.filter(p => 
+        p.dni.toLowerCase().includes(filtro.toLowerCase()) ||
+        p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+        p.grado.toLowerCase().includes(filtro.toLowerCase())
+      );
+
+      document.getElementById('span-total-padron').textContent = appData.padron.length;
+
+      filtrados.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-3 font-mono font-bold text-slate-700">${e.dni}</td>
+          <td class="p-3 font-medium text-slate-900">${e.nombre}</td>
+          <td class="p-3 text-slate-500">${e.grado}</td>
+          <td class="p-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${e.yaVoto ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">
+              ${e.yaVoto ? 'VOTÓ' : 'PENDIENTE'}
+            </span>
+          </td>
+          <td class="p-3 text-right">
+            <button onclick="eliminarElector('${e.dni}')" class="text-red-500 hover:text-red-700 p-1">
+              <i data-lucide="trash" class="w-4 h-4"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    function filtrarPadron() {
+      const val = document.getElementById('filtro-padron').value;
+      renderizarPadron(val);
+    }
+
+    function abrirModalNuevoElector() {
+      document.getElementById('elector-dni').value = '';
+      document.getElementById('elector-nombre').value = '';
+      document.getElementById('elector-grado').value = '';
+      document.getElementById('modal-elector').classList.remove('hidden');
+    }
+
+    function cerrarModalElector() {
+      document.getElementById('modal-elector').classList.add('hidden');
+    }
+
+    function guardarElectorManual(e) {
+      e.preventDefault();
+      const dni = document.getElementById('elector-dni').value.trim();
+      const nombre = document.getElementById('elector-nombre').value.trim();
+      const grado = document.getElementById('elector-grado').value.trim();
+
+      if (appData.padron.some(p => p.dni.toUpperCase() === dni.toUpperCase())) {
+        alert("Ya existe un elector con este DNI en el padrón.");
+        return;
+      }
+
+      appData.padron.push({ dni, nombre, grado, yaVoto: false });
+      guardarDatosEnStorage();
+      cerrarModalElector();
+      renderizarPadron();
+    }
+
+    function eliminarElector(dni) {
+      if (confirm(`¿Eliminar al elector con DNI ${dni}?`)) {
+        appData.padron = appData.padron.filter(p => p.dni !== dni);
+        guardarDatosEnStorage();
+        renderizarPadron();
+      }
+    }
+
+    function cargarPadronCSV(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const lines = evt.target.result.split('\n');
+        let agregados = 0;
+        lines.forEach(line => {
+          const parts = line.split(',');
+          if (parts.length >= 2) {
+            const dni = parts[0].trim().replace(/"/g, '');
+            const nombre = parts[1].trim().replace(/"/g, '');
+            const grado = parts[2] ? parts[2].trim().replace(/"/g, '') : "Por asignar";
+
+            if (dni && !appData.padron.some(p => p.dni === dni)) {
+              appData.padron.push({ dni, nombre, grado, yaVoto: false });
+              agregados++;
+            }
+          }
+        });
+        guardarDatosEnStorage();
+        renderizarPadron();
+        alert(`Se han importado ${agregados} nuevos electores desde el archivo CSV.`);
+      };
+      reader.readAsText(file);
+    }
+
+    // ==================== IMPRESIÓN DEL ACTA OFICIAL ====================
+    function imprimirActa() {
+      const { colegio, proceso, insignia } = appData.config;
+      const totalPadron = appData.padron.length;
+      const totalVotos = appData.votos.length;
+      const ausentismo = totalPadron - totalVotos;
+
+      document.getElementById('acta-school-name').textContent = colegio;
+      document.getElementById('acta-election-name').textContent = proceso;
+      document.getElementById('acta-insignia').src = insignia;
+      document.getElementById('acta-total-padron').textContent = totalPadron;
+      document.getElementById('acta-total-votos').textContent = totalVotos;
+      document.getElementById('acta-ausentismo').textContent = `${ausentismo} (${totalPadron > 0 ? ((ausentismo/totalPadron)*100).toFixed(1) : 0}%)`;
+      document.getElementById('acta-fecha').textContent = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+      // Conteo
+      const conteo = {};
+      appData.candidatos.forEach(c => conteo[c.id] = 0);
+      conteo['blanco'] = 0;
+      appData.votos.forEach(v => {
+        if (conteo[v.candidatoId] !== undefined) conteo[v.candidatoId]++;
+      });
+
+      const tbody = document.getElementById('acta-tbody-resultados');
+      tbody.innerHTML = '';
+
+      appData.candidatos.forEach(c => {
+        const v = conteo[c.id] || 0;
+        const pct = totalVotos > 0 ? ((v / totalVotos) * 100).toFixed(1) : 0;
+        tbody.innerHTML += `
+          <tr class="border border-black">
+            <td class="p-2 border border-black font-bold">${c.lista}</td>
+            <td class="p-2 border border-black">${c.candidato}</td>
+            <td class="p-2 border border-black text-center font-bold">${v}</td>
+            <td class="p-2 border border-black text-center">${pct}%</td>
+          </tr>
+        `;
+      });
+
+      const vb = conteo['blanco'] || 0;
+      const pctB = totalVotos > 0 ? ((vb / totalVotos) * 100).toFixed(1) : 0;
+      tbody.innerHTML += `
+        <tr class="border border-black bg-slate-50">
+          <td class="p-2 border border-black font-bold">VOTOS EN BLANCO</td>
+          <td class="p-2 border border-black">---</td>
+          <td class="p-2 border border-black text-center font-bold">${vb}</td>
+          <td class="p-2 border border-black text-center">${pctB}%</td>
+        </tr>
+      `;
+
+      // Disparar ventana de impresión
+      window.print();
+    }
+  </script>
+</body>
+</html>
